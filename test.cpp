@@ -19,7 +19,7 @@ inline void unit_test()
          assert(M.get(12).value_or("xx") == "xx");
          assert(M.get(13).value_or("xx") == "xx");
 
-         M.emplace(10, "10", 50);
+         M.emplace(10, "10", 50ms);
          assert(M.size() == 1);
          assert(M.get(10).value_or("xx") == "10");   // exp: 50ms
          assert(M.get(11).value_or("xx") == "xx");
@@ -33,7 +33,7 @@ inline void unit_test()
          assert(M.get(12).value_or("xx") == "xx");
          assert(M.get(13).value_or("xx") == "xx");
 
-         M.emplace(11, "11", 500);   // new higher expirty - 500ms
+         M.emplace(11, "11", 500ms);   // new higher expirty - 500ms
          assert(M.size() == 2);
          assert(M.get(10).value_or("xx") == "10");   // exp: 30ms
          assert(M.get(11).value_or("xx") == "11");   // exp: 500ms
@@ -41,7 +41,7 @@ inline void unit_test()
          assert(M.get(13).value_or("xx") == "xx");
 
          std::this_thread::sleep_for(20ms);   // -20ms
-         M.emplace(10, "10+", 50);
+         M.emplace(10, "10+", 50ms);
          assert(M.size() == 2);
          assert(M.get(10).value_or("xx") == "10+");   // exp: 50ms (exp reset from ~10ms)
          assert(M.get(11).value_or("xx") == "11");    // exp: 430ms
@@ -69,8 +69,8 @@ inline void unit_test()
          assert(M.get(12).value_or("xx") == "xx");
          assert(M.get(13).value_or("xx") == "xx");
 
-         M.emplace(12, "12", 20);   // new lowest expiry - 20ms
-         M.emplace(13, "13", 20);   // additional entry  - 20ms
+         M.emplace(12, "12", 20ms);   // new lowest expiry - 20ms
+         M.emplace(13, "13", 20ms);   // additional entry  - 20ms
          assert(M.size() == 3);
          assert(M.get(10).value_or("xx") == "xx");   // (exp)
          assert(M.get(11).value_or("xx") == "11");   // exp: 320ms

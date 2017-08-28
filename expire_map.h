@@ -75,7 +75,8 @@ public:
       return m_dictionary.size();
    }
 
-   std::experimental::optional<value_t> get(key_t key) const
+   template<typename compat_key_t>
+   std::experimental::optional<value_t> get(const compat_key_t& key) const
    {
       // [[expects: LOCK.owns_lock() == false]]
 
@@ -89,7 +90,8 @@ public:
       return {};
    }
 
-   void emplace(key_t key, value_t value, long timeoutMs)
+   template<typename compat_key_t, typename compat_value_t, typename duration_t>
+   void emplace(compat_key_t&& key, compat_value_t&& value, duration_t&& timeoutMs)
    {
       // [[expects: LOCK.owns_lock() == false]]
 
@@ -109,18 +111,19 @@ public:
 
       auto d_ref = m_dictionary.emplace_hint(
                       d_hint,
-                      std::move(key),
-                      dict_entry_t{std::move(value), {}}
+                      std::forward<compat_key_t>(key),
+                      dict_entry_t{std::forward<compat_value_t>(value), {}}
                    );
       auto e_ref = m_expiry_info.emplace_hint(
                       e_hint,
-                      std::chrono::system_clock::now() + std::chrono::milliseconds(timeoutMs),
+                      std::chrono::system_clock::now() + timeoutMs,
                       expiry_entry_t{d_ref}
                    );
       d_ref->second.m_expiry_ref = e_ref;
    }
 
-   void erase(key_t key)
+   template<typename compat_key_t>
+   void erase(const compat_key_t& key)
    {
       // [[expects: LOCK.owns_lock() == false]]
 
