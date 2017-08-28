@@ -38,6 +38,8 @@ class expire_map
 public:
    expire_map()
    {
+      // This thread loops forever (until object destruction):
+      // When notified, prunes entries, then waits until its time to prune the next entry.
       m_cleaner = std::thread([self = this]() {
          while (!self->m_exit)
          {
@@ -105,8 +107,16 @@ public:
          d_hint = m_dictionary.erase(d_hint);
       }
 
-      auto d_ref = m_dictionary.emplace_hint(d_hint, std::move(key), dict_entry_t{std::move(value), {}});
-      auto e_ref = m_expiry_info.emplace_hint(e_hint, std::chrono::system_clock::now() + std::chrono::milliseconds(timeoutMs), expiry_entry_t{d_ref});
+      auto d_ref = m_dictionary.emplace_hint(
+                      d_hint,
+                      std::move(key),
+                      dict_entry_t{std::move(value), {}}
+                   );
+      auto e_ref = m_expiry_info.emplace_hint(
+                      e_hint,
+                      std::chrono::system_clock::now() + std::chrono::milliseconds(timeoutMs),
+                      expiry_entry_t{d_ref}
+                   );
       d_ref->second.m_expiry_ref = e_ref;
    }
 
@@ -172,12 +182,12 @@ private:
 private:
    std::atomic<bool> m_exit = false;
 
-   dictionary_t m_dictionary;     // FIXME: enfore at compile time that this is accessed only with lock held
-   expiry_info_t m_expiry_info;   // FIXME: enfore at compile time that this is accessed only with lock held
+   dictionary_t m_dictionary;     // FIXME: enforce at compile time that this is accessed only with lock held
+   expiry_info_t m_expiry_info;   // FIXME: enforce at compile time that this is accessed only with lock held
    mutable std::mutex m_mutex;
    std::condition_variable m_cv;
 
-   std::thread m_cleaner;   // FIXME: requires one thread per unique template instance!!
-                            //      : provide a way to opt out
-                            //      : or make a common cleaner thread for all instances
+   std::thread m_cleaner;   // FIXME: requires one thread per object instance (and also per unique template instance)!!
+                            //      : investigate: a way to call prune from outside (user's reponsibility).
+                            //      : investigate: a way to just use one single thread for all object instances.
 };
